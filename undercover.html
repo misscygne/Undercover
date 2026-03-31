@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Undercover</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: rgba(255,255,255,0.08);
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --text: #f0f0f0;
+    --muted: #777;
+    --danger: #ff4545;
+    --success: #47ff8a;
+    --mr-white: #a78bfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* HEADER */
+  .header {
+    padding: 1.5rem 1.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text); }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    border: none;
+    cursor: pointer;
+    padding: 0.85rem 1.5rem;
+    border-radius: 12px;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: var(--accent);
+    color: #0d0d0d;
+    width: 100%;
+  }
+  .btn-primary:hover { background: #d4eb30; }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    width: 100%;
+  }
+  .btn-secondary:hover { background: #272727; }
+  .btn-danger {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+  }
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    width: auto;
+    border-radius: 8px;
+  }
+
+  /* INPUTS */
+  input[type="text"], input[type="number"], select {
+    font-family: 'Syne', sans-serif;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+    width: 100%;
+    outline: none;
+    transition: border 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  label { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.4rem; display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.2rem 1.5rem;
+  }
+
+  /* SCROLLABLE CONTENT AREA */
+  .content {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+  }
+  .badge-civil { background: rgba(71,255,138,0.15); color: var(--success); }
+  .badge-under { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .badge-white { background: rgba(167,139,250,0.15); color: var(--mr-white); }
+
+  /* PLAYER CHIP */
+  .player-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+  }
+  .player-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700; color: #0d0d0d;
+    flex-shrink: 0;
+  }
+  .player-name { font-weight: 700; font-size: 0.95rem; margin-left: 0.75rem; flex: 1; }
+
+  /* ROLE REVEAL CARD */
+  .reveal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .reveal-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(232,255,71,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .reveal-card.civil::before { background: radial-gradient(ellipse at 50% 0%, rgba(71,255,138,0.07) 0%, transparent 70%); }
+  .reveal-card.undercover::before { background: radial-gradient(ellipse at 50% 0%, rgba(255,107,53,0.07) 0%, transparent 70%); }
+  .reveal-card.mrwhite::before { background: radial-gradient(ellipse at 50% 0%, rgba(167,139,250,0.07) 0%, transparent 70%); }
+  .reveal-role { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+  .reveal-word { font-family: 'DM Mono', monospace; font-size: 1.1rem; color: var(--muted); margin-bottom: 1rem; }
+  .reveal-word span { color: var(--text); }
+  .reveal-hint { font-size: 0.75rem; color: var(--muted); }
+  .reveal-hidden { font-size: 3rem; color: var(--muted); padding: 2rem 0; }
+  .reveal-name { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.5rem; }
+
+  /* TIMER */
+  .timer-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+  }
+  .timer-ring svg { transform: rotate(-90deg); }
+  .timer-ring .track { fill: none; stroke: var(--surface2); stroke-width: 6; }
+  .timer-ring .progress { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .timer-value {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: 'DM Mono', monospace;
+  }
+  .timer-low .progress { stroke: var(--danger); }
+  .timer-low .timer-value { color: var(--danger); }
+
+  /* VOTE */
+  .vote-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .vote-item:hover { border-color: var(--accent); background: rgba(232,255,71,0.04); }
+  .vote-item.selected { border-color: var(--accent); background: rgba(232,255,71,0.08); }
+  .vote-bar { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-top: 0.4rem; }
+  .vote-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s; }
+
+  /* HISTORY */
+  .hist-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+  }
+  .hist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .hist-date { font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  /* LEADERBOARD */
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .lb-rank { font-size: 0.85rem; color: var(--muted); font-family: 'DM Mono', monospace; width: 20px; }
+  .lb-score { font-family: 'DM Mono', monospace; font-weight: 500; font-size: 0.95rem; color: var(--accent); margin-left: auto; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 1rem 0.5rem;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* LOADING */
+  .loading-dots span {
+    animation: blink 1.4s infinite;
+    font-size: 2rem;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  /* TOASTS */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.75rem 1.5rem;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+
+  /* MISC */
+  h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; }
+  h2 { font-size: 1.2rem; font-weight: 800; }
+  .muted { color: var(--muted); font-size: 0.85rem; }
+  .spacer { flex: 1; }
+  .row { display: flex; gap: 0.75rem; }
+  .row > * { flex: 1; }
+  .divider { height: 1px; background: var(--border); margin: 0.5rem 0; }
+  .center { text-align: center; }
+  .bottom-bar { padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .animate { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ======================== SCREEN: HOME ======================== -->
+<div class="screen active" id="s-home">
+  <div class="header">
+    <div class="logo">UNDER<span>COVER</span></div>
+    <button class="btn btn-sm btn-secondary" onclick="showScreen('s-history')">Historique</button>
+  </div>
+  <div class="content animate">
+    <div style="margin-top:1rem">
+      <h1>Qui est<br><span style="color:var(--accent)">l'espion</span> ?</h1>
+      <p class="muted" style="margin-top:0.5rem">Le jeu de déduction et de bluff</p>
+    </div>
+
+    <div class="card" style="margin-top:0.5rem">
+      <div id="players-list" style="display:flex;flex-direction:column;gap:0.5rem"></div>
+      <div style="display:flex;gap:0.5rem;margin-top:0.75rem">
+        <input type="text" id="player-input" placeholder="Nom du joueur" style="flex:1" maxlength="16" onkeydown="if(event.key==='Enter')addPlayer()">
+        <button class="btn btn-primary btn-sm" onclick="addPlayer()" style="width:auto;padding:0.5rem 1rem">+</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom:1rem">Configuration</h2>
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        <div>
+          <label>Thème (ou laissez vide pour aléatoire)</label>
+          <input type="text" id="theme-input" placeholder="ex: nature, sport, cuisine…">
+        </div>
+        <div class="row">
+          <div>
+            <label>Undercov.</label>
+            <input type="number" id="nb-under" value="1" min="1" max="4">
+          </div>
+          <div>
+            <label>Mr. White</label>
+            <select id="nb-white">
+              <option value="0">0</option>
+              <option value="1">1</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label>Minuteur (sec par tour)</label>
+          <select id="timer-select">
+            <option value="0">Désactivé</option>
+            <option value="30">30 sec</option>
+            <option value="60" selected>60 sec</option>
+            <option value="90">90 sec</option>
+            <option value="120">2 min</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-primary" onclick="startGame()">Lancer la partie</button>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: GENERATING ======================== -->
+<div class="screen" id="s-generating">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;padding:2rem;text-align:center">
+    <div class="loading-dots"><span>●</span><span>●</span><span>●</span></div>
+    <h2>L'IA génère les mots…</h2>
+    <p class="muted" id="gen-theme"></p>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: REVEAL ======================== -->
+<div class="screen" id="s-reveal">
+  <div class="header">
+    <div class="logo">UNDER<span>COVER</span></div>
+    <div style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--muted)" id="reveal-counter"></div>
+  </div>
+  <div class="content animate" style="justify-content:center">
+    <div id="reveal-card-wrap"></div>
+    <p class="muted center" style="font-size:0.8rem;margin-top:0.5rem">Tapez pour révéler votre rôle</p>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: PLAY ======================== -->
+<div class="screen" id="s-play">
+  <div class="header">
+    <div class="logo">UNDER<span>COVER</span></div>
+    <div id="play-round" style="font-size:0.8rem;color:var(--muted);font-family:'DM Mono',monospace"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tab-game" onclick="switchTab('game')">Jeu</button>
+    <button class="tab" id="tab-vote" onclick="switchTab('vote')">Vote</button>
+  </div>
+
+  <!-- GAME TAB -->
+  <div id="panel-game" class="content animate">
+    <div id="timer-wrap" class="center" style="display:none">
+      <div class="timer-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="52"/>
+          <circle class="progress" id="timer-circle" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-value" id="timer-val">60</div>
+      </div>
+      <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:1rem">
+        <button class="btn btn-secondary btn-sm" onclick="pauseTimer()">Pause</button>
+        <button class="btn btn-secondary btn-sm" onclick="nextPlayer()">Suivant →</button>
+      </div>
+    </div>
+
+    <div id="players-turn-list" style="display:flex;flex-direction:column;gap:0.5rem"></div>
+
+    <div class="divider"></div>
+    <p class="muted" style="font-size:0.8rem">Chaque joueur donne un indice à voix haute. Quand tout le monde a parlé, passez au vote.</p>
+  </div>
+
+  <!-- VOTE TAB -->
+  <div id="panel-vote" class="content" style="display:none">
+    <p class="muted" style="font-size:0.85rem">Qui est l'Undercover ou Mr. White ?</p>
+    <div id="vote-list" style="display:flex;flex-direction:column;gap:0.5rem"></div>
+    <div id="vote-results" style="display:none;flex-direction:column;gap:0.5rem"></div>
+  </div>
+
+  <div class="bottom-bar" id="vote-bar" style="display:none">
+    <button class="btn btn-primary" onclick="confirmVote()">Confirmer le vote</button>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: ELIMINATION ======================== -->
+<div class="screen" id="s-elim">
+  <div class="header"><div class="logo">UNDER<span>COVER</span></div></div>
+  <div class="content animate" style="justify-content:center;text-align:center;gap:1.5rem">
+    <div id="elim-content"></div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-primary" id="elim-next-btn" onclick="afterElim()">Continuer</button>
+    <button class="btn btn-secondary" onclick="endGame()">Terminer la partie</button>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: MRWHITE GUESS ======================== -->
+<div class="screen" id="s-mrwhite">
+  <div class="header"><div class="logo">UNDER<span>COVER</span></div></div>
+  <div class="content animate" style="justify-content:center;gap:1rem">
+    <div style="text-align:center">
+      <div class="badge badge-white" style="margin-bottom:1rem">Mr. White</div>
+      <h1 style="color:var(--mr-white)">Dernière chance !</h1>
+      <p class="muted" style="margin-top:0.5rem">Mr. White a été éliminé. Il peut encore gagner en devinant le mot des civils.</p>
+    </div>
+    <div>
+      <label>Votre devinette</label>
+      <input type="text" id="mrwhite-input" placeholder="Entrez un mot…" maxlength="30">
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-primary" style="background:var(--mr-white);color:#0d0d0d" onclick="submitMrWhiteGuess()">Révéler ma réponse</button>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: END GAME ======================== -->
+<div class="screen" id="s-end">
+  <div class="header"><div class="logo">UNDER<span>COVER</span></div></div>
+  <div class="content animate" style="justify-content:center;text-align:center;gap:1.5rem">
+    <div id="end-content"></div>
+    <div class="card" id="end-scores"></div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-primary" onclick="restartGame()">Nouvelle partie</button>
+    <button class="btn btn-secondary" onclick="showScreen('s-home')">Accueil</button>
+  </div>
+</div>
+
+<!-- ======================== SCREEN: HISTORY ======================== -->
+<div class="screen" id="s-history">
+  <div class="header">
+    <div class="logo">UNDER<span>COVER</span></div>
+    <button class="btn btn-sm btn-secondary" onclick="showScreen('s-home')">← Retour</button>
+  </div>
+  <div class="content animate">
+    <h2>Historique</h2>
+    <div id="history-list"></div>
+
+    <div class="divider" style="margin-top:1rem"></div>
+    <h2>Classement</h2>
+    <div id="leaderboard-list"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let players = [];
+let gameState = {};
+let timerInterval = null;
+let timerPaused = false;
+let timerRemaining = 0;
+let currentRevealIndex = 0;
+let votes = {};
+let currentVoteTarget = null;
+let voteResults = {};
+let history = JSON.parse(localStorage.getItem('uc_history') || '[]');
+let scores = JSON.parse(localStorage.getItem('uc_scores') || '{}');
+let activeTab = 'game';
+let currentPlayerTurn = 0;
+let eliminated = [];
+
+// ============================================================
+// SCREENS
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 's-history') renderHistory();
+}
+
+// ============================================================
+// PLAYERS SETUP
+// ============================================================
+function renderPlayerList() {
+  const list = document.getElementById('players-list');
+  list.innerHTML = players.map((p,i) => `
+    <div class="player-chip">
+      <div class="player-avatar">${p[0].toUpperCase()}</div>
+      <span class="player-name">${p}</span>
+      <button class="btn btn-danger" onclick="removePlayer(${i})">✕</button>
+    </div>`).join('');
+}
+
+function addPlayer() {
+  const inp = document.getElementById('player-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (players.includes(name)) { toast('Nom déjà utilisé'); return; }
+  if (players.length >= 12) { toast('Max 12 joueurs'); return; }
+  players.push(name);
+  inp.value = '';
+  renderPlayerList();
+}
+
+function removePlayer(i) {
+  players.splice(i, 1);
+  renderPlayerList();
+}
+
+// ============================================================
+// GAME START
+// ============================================================
+async function startGame() {
+  if (players.length < 3) { toast('Minimum 3 joueurs'); return; }
+  const nbUnder = parseInt(document.getElementById('nb-under').value);
+  const nbWhite = parseInt(document.getElementById('nb-white').value);
+  if (nbUnder + nbWhite >= players.length - 1) { toast('Trop d\'espions pour si peu de joueurs'); return; }
+
+  const theme = document.getElementById('theme-input').value.trim() || null;
+  const timerSec = parseInt(document.getElementById('timer-select').value);
+
+  gameState = { nbUnder, nbWhite, theme, timerSec, round: 1 };
+  eliminated = [];
+  votes = {};
+  voteResults = {};
+
+  const themeDisplay = theme ? `Thème : ${theme}` : 'Thème aléatoire';
+  document.getElementById('gen-theme').textContent = themeDisplay;
+  showScreen('s-generating');
+
+  try {
+    const words = await generateWords(theme);
+    gameState.civilWord = words.civil;
+    gameState.undercoverWord = words.undercover;
+    gameState.theme = words.theme;
+    assignRoles();
+    startReveal();
+  } catch(e) {
+    toast('Erreur IA, on réessaie…');
+    showScreen('s-home');
+  }
+}
+
+// ============================================================
+// AI WORD GENERATION
+// ============================================================
+async function generateWords(theme) {
+  const prompt = theme
+    ? `Tu es le générateur de mots pour le jeu Undercover. Le thème demandé est : "${theme}". Génère une paire de mots proches mais distincts : un mot pour les civils et un mot pour l'undercover. Les deux mots doivent être dans la même catégorie sémantique mais suffisamment différents pour qu'un joueur puisse bluffer. Réponds UNIQUEMENT en JSON strict, sans markdown, dans ce format : {"civil":"mot1","undercover":"mot2","theme":"${theme}"}`
+    : `Tu es le générateur de mots pour le jeu Undercover. Choisis un thème aléatoire intéressant et génère une paire de mots proches mais distincts : un mot pour les civils et un mot pour l'undercover. Les deux mots doivent être dans la même catégorie sémantique. Exemples de bonnes paires : (Lion/Tigre), (Café/Thé), (Guitare/Violon), (Piscine/Mer). Réponds UNIQUEMENT en JSON strict, sans markdown, dans ce format : {"civil":"mot1","undercover":"mot2","theme":"thème choisi"}`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 200,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  const data = await response.json();
+  const text = data.content[0].text.trim();
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+// ============================================================
+// ROLE ASSIGNMENT
+// ============================================================
+function assignRoles() {
+  const shuffled = [...players].sort(() => Math.random() - 0.5);
+  gameState.roles = {};
+  shuffled.forEach((p, i) => {
+    if (i < gameState.nbUnder) gameState.roles[p] = 'undercover';
+    else if (i < gameState.nbUnder + gameState.nbWhite) gameState.roles[p] = 'mrwhite';
+    else gameState.roles[p] = 'civil';
+  });
+}
+
+// ============================================================
+// REVEAL PHASE
+// ============================================================
+function startReveal() {
+  currentRevealIndex = 0;
+  showRevealCard();
+  showScreen('s-reveal');
+}
+
+function showRevealCard() {
+  const player = players[currentRevealIndex];
+  const total = players.length;
+  document.getElementById('reveal-counter').textContent = `${currentRevealIndex + 1} / ${total}`;
+
+  const wrap = document.getElementById('reveal-card-wrap');
+  wrap.innerHTML = `
+    <div class="reveal-card" id="the-reveal-card" onclick="toggleReveal()">
+      <div class="reveal-name">${player}</div>
+      <div class="reveal-hidden" id="reveal-hidden">👁</div>
+      <div id="reveal-content" style="display:none">
+        <div class="reveal-role" id="rrole"></div>
+        <div class="reveal-word" id="rword"></div>
+      </div>
+      <div class="reveal-hint" id="rhint">Appuyez pour voir votre rôle</div>
+    </div>
+    <button class="btn btn-secondary" id="reveal-next-btn" style="margin-top:1rem;display:none" onclick="nextReveal()">
+      ${currentRevealIndex < players.length - 1 ? 'Joueur suivant →' : 'Commencer la partie →'}
+    </button>`;
+}
+
+let revealShown = false;
+function toggleReveal() {
+  if (revealShown) return;
+  revealShown = true;
+  const player = players[currentRevealIndex];
+  const role = gameState.roles[player];
+  const card = document.getElementById('the-reveal-card');
+
+  document.getElementById('reveal-hidden').style.display = 'none';
+  document.getElementById('reveal-content').style.display = 'block';
+  document.getElementById('reveal-next-btn').style.display = 'block';
+
+  if (role === 'civil') {
+    card.className = 'reveal-card civil animate';
+    document.getElementById('rrole').textContent = 'Civil';
+    document.getElementById('rrole').style.color = 'var(--success)';
+    document.getElementById('rword').innerHTML = `Votre mot : <span>${gameState.civilWord}</span>`;
+    document.getElementById('rhint').textContent = 'Donnez un indice sans dire le mot exact';
+  } else if (role === 'undercover') {
+    card.className = 'reveal-card undercover animate';
+    document.getElementById('rrole').textContent = 'Undercover';
+    document.getElementById('rrole').style.color = 'var(--accent2)';
+    document.getElementById('rword').innerHTML = `Votre mot : <span>${gameState.undercoverWord}</span>`;
+    document.getElementById('rhint').textContent = 'Bluffez ! Faites croire que vous êtes civil';
+  } else {
+    card.className = 'reveal-card mrwhite animate';
+    document.getElementById('rrole').textContent = 'Mr. White';
+    document.getElementById('rrole').style.color = 'var(--mr-white)';
+    document.getElementById('rword').innerHTML = `Vous n'avez <span>aucun mot</span>`;
+    document.getElementById('rhint').textContent = 'Écoutez les indices et devinez !';
+  }
+}
+
+function nextReveal() {
+  revealShown = false;
+  currentRevealIndex++;
+  if (currentRevealIndex >= players.length) {
+    startPlayPhase();
+  } else {
+    showRevealCard();
+  }
+}
+
+// ============================================================
+// PLAY PHASE
+// ============================================================
+function startPlayPhase() {
+  currentPlayerTurn = 0;
+  activeTab = 'game';
+  renderPlayPhase();
+  showScreen('s-play');
+}
+
+function renderPlayPhase() {
+  document.getElementById('play-round').textContent = `Manche ${gameState.round}`;
+  switchTab('game');
+
+  const activePlayers = players.filter(p => !eliminated.includes(p));
+  const list = document.getElementById('players-turn-list');
+  list.innerHTML = activePlayers.map((p, i) => `
+    <div class="player-chip" id="turn-${i}" style="${i === currentPlayerTurn ? 'border-color:var(--accent);background:rgba(232,255,71,0.05)' : ''}">
+      <div class="player-avatar" style="${i === currentPlayerTurn ? 'background:var(--accent)' : 'background:var(--surface2);color:var(--muted)'}">${p[0].toUpperCase()}</div>
+      <span class="player-name">${p}</span>
+      ${i === currentPlayerTurn ? '<span style="font-size:0.75rem;color:var(--accent);font-family:\'DM Mono\',monospace">Parle !</span>' : ''}
+    </div>`).join('');
+
+  const timerSec = gameState.timerSec;
+  if (timerSec > 0) {
+    document.getElementById('timer-wrap').style.display = 'block';
+    startTimer(timerSec);
+  }
+}
+
+function nextPlayer() {
+  const activePlayers = players.filter(p => !eliminated.includes(p));
+  currentPlayerTurn = (currentPlayerTurn + 1) % activePlayers.length;
+  clearTimerInterval();
+  renderPlayPhase();
+}
+
+// ============================================================
+// TIMER
+// ============================================================
+const CIRCUMFERENCE = 326.73;
+
+function startTimer(sec) {
+  timerRemaining = sec;
+  timerPaused = false;
+  updateTimerUI(sec, sec);
+  clearTimerInterval();
+  timerInterval = setInterval(() => {
+    if (timerPaused) return;
+    timerRemaining--;
+    updateTimerUI(timerRemaining, sec);
+    if (timerRemaining <= 0) {
+      clearTimerInterval();
+      toast("⏱ Temps écoulé !");
+      nextPlayer();
+    }
+  }, 1000);
+}
+
+function updateTimerUI(val, max) {
+  const el = document.getElementById('timer-val');
+  const circle = document.getElementById('timer-circle');
+  const wrap = document.getElementById('timer-wrap');
+  if (!el || !circle) return;
+  el.textContent = val;
+  const offset = CIRCUMFERENCE * (1 - val / max);
+  circle.style.strokeDashoffset = offset;
+  if (val <= 10) wrap.classList.add('timer-low');
+  else wrap.classList.remove('timer-low');
+}
+
+function pauseTimer() {
+  timerPaused = !timerPaused;
+  const btn = document.querySelector('[onclick="pauseTimer()"]');
+  if (btn) btn.textContent = timerPaused ? 'Reprendre' : 'Pause';
+}
+
+function clearTimerInterval() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tab-game').className = 'tab' + (tab === 'game' ? ' active' : '');
+  document.getElementById('tab-vote').className = 'tab' + (tab === 'vote' ? ' active' : '');
+  document.getElementById('panel-game').style.display = tab === 'game' ? 'flex' : 'none';
+  document.getElementById('panel-vote').style.display = tab === 'vote' ? 'flex' : 'none';
+  document.getElementById('vote-bar').style.display = tab === 'vote' ? 'flex' : 'none';
+  if (tab === 'vote') renderVotePanel();
+}
+
+// ============================================================
+// VOTE
+// ============================================================
+function renderVotePanel() {
+  const activePlayers = players.filter(p => !eliminated.includes(p));
+  document.getElementById('vote-results').style.display = 'none';
+  const list = document.getElementById('vote-list');
+  list.innerHTML = activePlayers.map(p => `
+    <div class="vote-item ${currentVoteTarget === p ? 'selected' : ''}" onclick="selectVote('${p}')">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div class="player-avatar" style="background:var(--surface2);color:var(--muted);width:30px;height:30px;font-size:0.75rem">${p[0].toUpperCase()}</div>
+        <span style="font-weight:700">${p}</span>
+      </div>
+      <span style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--muted)">${voteResults[p] ? voteResults[p] + ' vote(s)' : ''}</span>
+    </div>`).join('');
+}
+
+function selectVote(player) {
+  currentVoteTarget = player;
+  renderVotePanel();
+}
+
+function confirmVote() {
+  if (!currentVoteTarget) { toast('Sélectionnez un joueur'); return; }
+  votes[currentVoteTarget] = (votes[currentVoteTarget] || 0) + 1;
+  voteResults = { ...votes };
+  clearTimerInterval();
+  eliminatePlayer(currentVoteTarget);
+}
+
+// ============================================================
+// ELIMINATION
+// ============================================================
+function eliminatePlayer(player) {
+  const role = gameState.roles[player];
+  eliminated.push(player);
+  currentVoteTarget = null;
+  votes = {};
+  voteResults = {};
+
+  const content = document.getElementById('elim-content');
+  const nextBtn = document.getElementById('elim-next-btn');
+
+  let roleLabel = role === 'civil' ? 'Civil' : role === 'undercover' ? 'Undercover' : 'Mr. White';
+  let roleColor = role === 'civil' ? 'var(--success)' : role === 'undercover' ? 'var(--accent2)' : 'var(--mr-white)';
+  let badgeClass = role === 'civil' ? 'badge-civil' : role === 'undercover' ? 'badge-under' : 'badge-white';
+
+  content.innerHTML = `
+    <div class="badge ${badgeClass}" style="margin-bottom:1rem">${roleLabel}</div>
+    <h1 style="color:${roleColor};margin-bottom:0.5rem">${player}</h1>
+    <p class="muted">a été éliminé·e</p>
+    <div style="margin-top:1.5rem;padding:1rem;background:var(--surface2);border-radius:12px">
+      <p style="font-size:0.75rem;color:var(--muted);margin-bottom:0.25rem">Son mot était</p>
+      <p style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:500">${getWordForRole(role)}</p>
+    </div>`;
+
+  if (role === 'mrwhite') {
+    nextBtn.textContent = 'Mr. White devine →';
+    nextBtn.onclick = () => showScreen('s-mrwhite');
+  } else {
+    nextBtn.textContent = 'Continuer →';
+    nextBtn.onclick = afterElim;
+  }
+
+  showScreen('s-elim');
+  checkWinCondition(role, player);
+}
+
+function getWordForRole(role) {
+  if (role === 'civil') return gameState.civilWord;
+  if (role === 'undercover') return gameState.undercoverWord;
+  return 'Aucun mot';
+}
+
+function checkWinCondition(eliminatedRole, player) {
+  const activePlayers = players.filter(p => !eliminated.includes(p));
+  const activeRoles = activePlayers.map(p => gameState.roles[p]);
+  const undercoverAlive = activeRoles.filter(r => r === 'undercover').length;
+  const mrWhiteAlive = activeRoles.filter(r => r === 'mrwhite').length;
+  const civiliansAlive = activeRoles.filter(r => r === 'civil').length;
+
+  // Undercover wins if they outnumber or equal civilians
+  if (undercoverAlive >= civiliansAlive) {
+    setTimeout(() => endGame('undercover'), 500);
+    return;
+  }
+  if (undercoverAlive === 0 && mrWhiteAlive === 0) {
+    setTimeout(() => endGame('civil'), 500);
+    return;
+  }
+  if (mrWhiteAlive === 0 && undercoverAlive === 0) {
+    setTimeout(() => endGame('civil'), 500);
+  }
+}
+
+function afterElim() {
+  const activePlayers = players.filter(p => !eliminated.includes(p));
+  const activeRoles = activePlayers.map(p => gameState.roles[p]);
+  const undercoverAlive = activeRoles.filter(r => r === 'undercover').length;
+  const mrWhiteAlive = activeRoles.filter(r => r === 'mrwhite').length;
+  const civiliansAlive = activeRoles.filter(r => r === 'civil').length;
+
+  if (undercoverAlive >= civiliansAlive) { endGame('undercover'); return; }
+  if (undercoverAlive === 0 && mrWhiteAlive === 0) { endGame('civil'); return; }
+
+  gameState.round++;
+  currentPlayerTurn = 0;
+  renderPlayPhase();
+  showScreen('s-play');
+}
+
+// ============================================================
+// MR. WHITE GUESS
+// ============================================================
+function submitMrWhiteGuess() {
+  const guess = document.getElementById('mrwhite-input').value.trim().toLowerCase();
+  const civilWord = gameState.civilWord.toLowerCase();
+  if (!guess) { toast('Entrez un mot'); return; }
+
+  if (guess === civilWord || guess.includes(civilWord) || civilWord.includes(guess)) {
+    endGame('mrwhite');
+  } else {
+    // Mr. White wrong, civil wins
+    endGame('civil');
+  }
+}
+
+// ============================================================
+// END GAME
+// ============================================================
+function endGame(winner) {
+  clearTimerInterval();
+  const content = document.getElementById('end-content');
+  const scoresEl = document.getElementById('end-scores');
+
+  let title, color, desc;
+  if (winner === 'civil') {
+    title = '🎉 Les Civils gagnent !';
+    color = 'var(--success)';
+    desc = `Le mot civil était <strong>${gameState.civilWord}</strong>, le mot undercover était <strong>${gameState.undercoverWord}</strong>`;
+  } else if (winner === 'undercover') {
+    title = '🕵️ L\'Undercover gagne !';
+    color = 'var(--accent2)';
+    desc = `Bravo aux espions ! Civil : <strong>${gameState.civilWord}</strong>, Undercover : <strong>${gameState.undercoverWord}</strong>`;
+  } else {
+    title = '👻 Mr. White gagne !';
+    color = 'var(--mr-white)';
+    desc = `Le fantôme a deviné le mot des civils : <strong>${gameState.civilWord}</strong>`;
+  }
+
+  content.innerHTML = `<h1 style="color:${color};margin-bottom:0.5rem">${title}</h1><p class="muted">${desc}</p>`;
+
+  // Update scores
+  const pts = computePoints(winner);
+  scoresEl.innerHTML = `<h2 style="margin-bottom:0.75rem">Points gagnés</h2>` +
+    Object.entries(pts).sort((a,b) => b[1]-a[1]).map(([p, pt]) => `
+      <div class="lb-row">
+        <div class="player-avatar" style="width:28px;height:28px;font-size:0.75rem">${p[0].toUpperCase()}</div>
+        <span style="font-weight:700;flex:1">${p}</span>
+        <span class="badge ${gameState.roles[p] === 'civil' ? 'badge-civil' : gameState.roles[p] === 'undercover' ? 'badge-under' : 'badge-white'}">${gameState.roles[p]}</span>
+        <span class="lb-score">+${pt}</span>
+      </div>`).join('');
+
+  // Save to history
+  saveHistory(winner, pts);
+  showScreen('s-end');
+}
+
+function computePoints(winner) {
+  const pts = {};
+  players.forEach(p => {
+    const role = gameState.roles[p];
+    let pt = 0;
+    if (winner === 'civil' && role === 'civil') pt = 2;
+    else if (winner === 'undercover' && role === 'undercover') pt = 3;
+    else if (winner === 'mrwhite' && role === 'mrwhite') pt = 4;
+    else if (eliminated.includes(p) && role !== 'civil' && winner === 'civil') pt = 0;
+    pts[p] = pt;
+
+    scores[p] = (scores[p] || 0) + pt;
+  });
+  localStorage.setItem('uc_scores', JSON.stringify(scores));
+  return pts;
+}
+
+function saveHistory(winner, pts) {
+  const entry = {
+    date: new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+    civilWord: gameState.civilWord,
+    undercoverWord: gameState.undercoverWord,
+    theme: gameState.theme,
+    winner,
+    rounds: gameState.round,
+    players: players.map(p => ({ name: p, role: gameState.roles[p], pts: pts[p] || 0 }))
+  };
+  history.unshift(entry);
+  if (history.length > 20) history.pop();
+  localStorage.setItem('uc_history', JSON.stringify(history));
+}
+
+// ============================================================
+// HISTORY & LEADERBOARD
+// ============================================================
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (history.length === 0) {
+    list.innerHTML = '<p class="muted">Aucune partie pour le moment</p>';
+  } else {
+    list.innerHTML = history.map(h => {
+      const winLabel = h.winner === 'civil' ? 'Civils' : h.winner === 'undercover' ? 'Undercover' : 'Mr. White';
+      const winBadge = h.winner === 'civil' ? 'badge-civil' : h.winner === 'undercover' ? 'badge-under' : 'badge-white';
+      return `
+        <div class="hist-item" style="margin-bottom:0.5rem">
+          <div class="hist-header">
+            <span class="badge ${winBadge}">${winLabel} gagne</span>
+            <span class="hist-date">${h.date}</span>
+          </div>
+          <p style="font-family:'DM Mono',monospace;font-size:0.85rem">
+            <span style="color:var(--success)">${h.civilWord}</span> / <span style="color:var(--accent2)">${h.undercoverWord}</span>
+          </p>
+          <p class="muted" style="font-size:0.75rem;margin-top:0.25rem">Thème : ${h.theme} · ${h.rounds} manche(s)</p>
+        </div>`;
+    }).join('');
+  }
+
+  const lb = document.getElementById('leaderboard-list');
+  const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+  if (sorted.length === 0) {
+    lb.innerHTML = '<p class="muted">Aucun score encore</p>';
+  } else {
+    lb.innerHTML = sorted.map(([p, s], i) => `
+      <div class="lb-row">
+        <span class="lb-rank">${i+1}.</span>
+        <div class="player-avatar" style="width:28px;height:28px;font-size:0.75rem">${p[0].toUpperCase()}</div>
+        <span style="font-weight:700;flex:1">${p}</span>
+        <span class="lb-score">${s} pts</span>
+      </div>`).join('');
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function restartGame() {
+  eliminated = [];
+  votes = {};
+  voteResults = {};
+  currentVoteTarget = null;
+  clearTimerInterval();
+  startGame();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Init demo players for preview
+window.onload = () => {
+  renderPlayerList();
+};
+</script>
+</body>
+</html>
